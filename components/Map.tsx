@@ -35,10 +35,8 @@ function MapController({ selectedId, onAnimationComplete }: { selectedId: string
 
 // --- 2. KOMPONENTA PRO ÚTOKY S FUNKČNÍMI ANIMACEMI NA VERCEL ---
 function AttackLines({ selectedId, colors }: { selectedId: string | null, colors: any }) {
-  if (!selectedId) return null;
-
-  const SHIP_SIZE = 15; 
-
+  const [missiles, setMissiles] = useState<Record<string, { lat: number; lng: number; progress: number }>>({});
+  
   const attacks: Record<string, { from: [number, number], to: [number, number], size?: number, rotation?: number, duration: string, color?: string }[]> = {
     ukraine: [
       { from: [54.00, 38.00], to: [50.50, 30.65], size: 13, rotation: 140, duration: "2s", color: "#FF5555" }, 
@@ -62,6 +60,64 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
     ]
   };
 
+  const parseDuration = (duration: string): number => {
+    return parseFloat(duration) * 1000;
+  };
+
+  useEffect(() => {
+    if (!selectedId) return;
+    
+    const currentAttacks = attacks[selectedId] || [];
+    const intervals: NodeJS.Timeout[] = [];
+    
+    currentAttacks.forEach((attack, idx) => {
+      const key = `${selectedId}-${idx}`;
+      const start = attack.from;
+      const end = attack.to;
+      const duration = parseDuration(attack.duration);
+      const step = 50;
+      const startDelay = idx * 400;
+      
+      const startTimeout = setTimeout(() => {
+        // Inicializace střely
+        setMissiles(prev => ({
+          ...prev,
+          [key]: { lat: start[0], lng: start[1], progress: 0 }
+        }));
+        
+        // Kontinuální animace - běží pořád dokola
+        const interval = setInterval(() => {
+          setMissiles(prev => {
+            const current = prev[key];
+            if (!current) return prev;
+            
+            let newProgress = current.progress + step;
+            if (newProgress >= duration) {
+              newProgress = 0; // restart
+            }
+            
+            const t = newProgress / duration;
+            const lat = start[0] + (end[0] - start[0]) * t;
+            const lng = start[1] + (end[1] - start[1]) * t;
+            
+            return {
+              ...prev,
+              [key]: { lat, lng, progress: newProgress }
+            };
+          });
+        }, step);
+        
+        intervals.push(interval);
+      }, startDelay);
+      
+      intervals.push(startTimeout as any);
+    });
+    
+    return () => intervals.forEach(clearInterval);
+  }, [selectedId]);
+
+  if (!selectedId) return null;
+  
   const currentAttacks = attacks[selectedId] || [];
   const defaultColor = selectedId === "ukraine" ? colors.UKR_RUS : colors.ISR_IRN;
 
@@ -76,44 +132,41 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
   return (
     <>
       {currentAttacks.map((attack, index) => {
+        const key = `${selectedId}-${index}`;
+        const missile = missiles[key];
         const activeColor = attack.color || defaultColor;
         const s = attack.size || 20;
         const r = attack.rotation || 0;
         const isFromShip = attack.color === "#FF00FF" || attack.color === "#FFFFFF";
 
         return (
-          <React.Fragment key={`${selectedId}-${index}`}>
-            {/* Startovní bod */}
+          <React.Fragment key={key}>
             <Marker 
               position={attack.from} 
               interactive={false} 
               icon={L.divIcon({ 
                 className: "launch-point", 
                 html: isFromShip 
-                  ? `<div style="display: flex; align-items: center; justify-content: center;">${shipSvg(activeColor, SHIP_SIZE)}</div>`
+                  ? `<div style="display: flex; align-items: center; justify-content: center;">${shipSvg(activeColor, 15)}</div>`
                   : `<div style="width: 8px; height: 8px; border: 2px solid ${activeColor}; border-radius: 50%; background: ${activeColor}44;"></div>`, 
-                iconSize: isFromShip ? [SHIP_SIZE, SHIP_SIZE] : [8, 8], 
-                iconAnchor: isFromShip ? [SHIP_SIZE / 2, SHIP_SIZE / 2] : [4, 4] 
+                iconSize: isFromShip ? [15, 15] : [8, 8], 
+                iconAnchor: isFromShip ? [7.5, 7.5] : [4, 4] 
               })} 
             />
             
-            {/* Naváděcí čára - jemná podkladová */}
             <Polyline positions={[attack.from, attack.to]} pathOptions={{ color: activeColor, weight: 1, opacity: 0.2, dashArray: "4, 8" }} />
             
-            {/* STŘELA - animovaná pomocí CSS (funkční na Vercel) */}
-            <Polyline
-              positions={[attack.from, attack.to]}
-              pathOptions={{
-                color: activeColor,
-                weight: 3,
-                opacity: 1,
-                className: `missile-line delay-m-${index % 10}`,
-                lineCap: "round",
-                lineJoin: "round"
-              }}
-            />
+            {missile && (
+              <Marker 
+                position={[missile.lat, missile.lng]} 
+                icon={L.divIcon({
+                  html: `<div style="width: 6px; height: 6px; background: ${activeColor}; border-radius: 50%; box-shadow: 0 0 8px ${activeColor};"></div>`,
+                  iconSize: [6, 6],
+                  className: "missile-dot"
+                })}
+              />
+            )}
             
-            {/* Cílová šipka */}
             <Marker position={attack.to} interactive={false} icon={L.divIcon({ className: "impact-arrow", html: `<div style="transform: rotate(${r}deg); color: ${activeColor}; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="currentColor" width="${s}" height="${s}" style="filter: drop-shadow(0 0 5px ${activeColor});"><path d="M21 12l-18 9v-18z" /></svg></div>`, iconSize: [s, s], iconAnchor: [s / 2, s / 2] })} />
           </React.Fragment>
         );
