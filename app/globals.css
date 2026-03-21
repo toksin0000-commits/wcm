@@ -394,3 +394,88 @@ html, body {
 .delay-m-8 { animation-delay: 6.4s !important; }
 .delay-m-9 { animation-delay: 7.2s !important; }
 
+
+@keyframes pulse { 
+  0% { transform: scale(1); opacity: 1; } 
+  100% { transform: scale(2.2); opacity: 0; } 
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(220,38,38,0.3); }
+  50% { transform: scale(1.02); box-shadow: 0 0 35px rgba(220,38,38,0.6); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s infinite ease-in-out;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.8s ease-out forwards;
+}
+
+.scope-container { 
+  position: relative; 
+  width: 30px; 
+  height: 30px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  cursor: pointer;
+}
+
+.scope-pulse { 
+  position: absolute; 
+  width: 20px; 
+  height: 20px; 
+  border-radius: 50%; 
+  animation: pulse 0.8s infinite ease-out; 
+}
+
+.scope-pulse-ukr { 
+  border: 2px solid #FF0000; 
+}
+
+.scope-pulse-isr { 
+  border: 2px solid #39FF14; 
+  animation: pulse 2.5s infinite ease-in-out; 
+  animation-delay: -0.75s;
+}
+
+.scope-cross-h, .scope-cross-v {
+  position: absolute;
+  background: currentColor;
+  opacity: 0.7;
+}
+.scope-cross-h { width: 15px; height: 1px; }
+.scope-cross-v { width: 1px; height: 15px; }
+
+@keyframes missileFlow {
+  0% { stroke-dashoffset: 400; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.missile-line {
+  stroke-dasharray: 30, 370 !important;
+  stroke-dashoffset: 400;
+  animation: missileFlow 2.5s linear infinite !important;
+  filter: drop-shadow(0 0 6px currentColor);
+  will-change: stroke-dashoffset;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.delay-m-0 { animation-delay: 0s !important; }
+.delay-m-1 { animation-delay: 0.6s !important; }
+.delay-m-2 { animation-delay: 1.2s !important; }
+.delay-m-3 { animation-delay: 1.8s !important; }
+.delay-m-4 { animation-delay: 2.4s !important; }
+.delay-m-5 { animation-delay: 3.0s !important; }
+.delay-m-6 { animation-delay: 3.6s !important; }
+.delay-m-7 { animation-delay: 4.2s !important; }
+.delay-m-8 { animation-delay: 4.8s !important; }
+.delay-m-9 { animation-delay: 5.4s !important; }
