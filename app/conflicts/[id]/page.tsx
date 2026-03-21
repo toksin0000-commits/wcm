@@ -2,9 +2,8 @@ import conflicts from "@/data/conflicts.json";
 import Timeline from "@/components/Timeline";
 import AIChat from "@/components/AIChat";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 
-const MiniMap = dynamic(() => import("@/components/MiniMap"), { ssr: false });
+
 
 interface ConflictPageProps {
   params: {
@@ -55,8 +54,7 @@ export default function ConflictPage({ params }: ConflictPageProps) {
       {/* MINI MAPKA */}
       <div className="mb-12">
         <h2 className="text-xl font-semibold mb-4">Mapa oblasti</h2>
-        <MiniMap area={conflict.map_area} />
-      </div>
+              </div>
 
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Humanitární dopady</h2>
