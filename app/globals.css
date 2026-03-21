@@ -288,7 +288,7 @@ html, body {
   width: 30px;
   height: 30px;
   display: flex;
-  align-items: center;
+    align-items: center;
   justify-content: center;
 }
 
@@ -393,3 +393,4 @@ html, body {
 .delay-m-7 { animation-delay: 5.6s !important; }
 .delay-m-8 { animation-delay: 6.4s !important; }
 .delay-m-9 { animation-delay: 7.2s !important; }
+

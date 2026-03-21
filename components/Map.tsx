@@ -33,7 +33,7 @@ function MapController({ selectedId, onAnimationComplete }: { selectedId: string
   return null;
 }
 
-// --- 2. KOMPONENTA PRO ÚTOKY (POMALEJŠÍ STŘELY, RŮZNÁ ZPOŽDĚNÍ) ---
+// --- 2. KOMPONENTA PRO ÚTOKY S FUNKČNÍMI ANIMACEMI NA VERCEL ---
 function AttackLines({ selectedId, colors }: { selectedId: string | null, colors: any }) {
   if (!selectedId) return null;
 
@@ -83,6 +83,7 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
 
         return (
           <React.Fragment key={`${selectedId}-${index}`}>
+            {/* Startovní bod */}
             <Marker 
               position={attack.from} 
               interactive={false} 
@@ -96,19 +97,23 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
               })} 
             />
             
+            {/* Naváděcí čára - jemná podkladová */}
             <Polyline positions={[attack.from, attack.to]} pathOptions={{ color: activeColor, weight: 1, opacity: 0.2, dashArray: "4, 8" }} />
             
+            {/* STŘELA - animovaná pomocí CSS (funkční na Vercel) */}
             <Polyline
               positions={[attack.from, attack.to]}
               pathOptions={{
                 color: activeColor,
                 weight: 3,
                 opacity: 1,
-                className: `animate-missile-flow delay-m-${index}`,
-                lineCap: "round"
+                className: `missile-line delay-m-${index % 10}`,
+                lineCap: "round",
+                lineJoin: "round"
               }}
             />
             
+            {/* Cílová šipka */}
             <Marker position={attack.to} interactive={false} icon={L.divIcon({ className: "impact-arrow", html: `<div style="transform: rotate(${r}deg); color: ${activeColor}; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="currentColor" width="${s}" height="${s}" style="filter: drop-shadow(0 0 5px ${activeColor});"><path d="M21 12l-18 9v-18z" /></svg></div>`, iconSize: [s, s], iconAnchor: [s / 2, s / 2] })} />
           </React.Fragment>
         );
@@ -137,13 +142,13 @@ function ConflictCountries({ selectedId, show }: { selectedId: string | null; sh
     if (!selectedId) return { weight: 0, fillOpacity: 0, opacity: 0 };
     
     if (selectedId === 'ukraine') {
-      if (name === 'Ukraine') return { color: '#0057B7', weight: 1, fillColor: '#0057B7', fillOpacity: 0.15 };
-      if (name === 'Russia') return { color: '#FF5555', weight: 1, fillColor: '#FF5555', fillOpacity: 0.15 };
+      if (name === 'Ukraine') return { color: '#0057B7', weight: 2, fillColor: '#0057B7', fillOpacity: 0.2 };
+      if (name === 'Russia') return { color: '#FF5555', weight: 2, fillColor: '#FF5555', fillOpacity: 0.2 };
     }
     
     if (selectedId === 'israel-iran') {
-      if (name === 'Israel') return { color: '#0057B7', weight: 1, fillColor: '#0057B7', fillOpacity: 0.15 };
-      if (name === 'Iran') return { color: '#39FF14', weight: 1, fillColor: '#39FF14', fillOpacity: 0.15 };
+      if (name === 'Israel') return { color: '#0057B7', weight: 2, fillColor: '#0057B7', fillOpacity: 0.2 };
+      if (name === 'Iran') return { color: '#39FF14', weight: 2, fillColor: '#39FF14', fillOpacity: 0.2 };
     }
     
     return { weight: 0, fillOpacity: 0, opacity: 0 };
@@ -151,10 +156,7 @@ function ConflictCountries({ selectedId, show }: { selectedId: string | null; sh
 
   if (!borderData || !show || !selectedId) return null;
 
-  return <GeoJSON 
-    data={borderData} 
-    style={getCountryStyle}
-  />;
+  return <GeoJSON data={borderData} style={getCountryStyle} />;
 }
 
 // --- HLAVNÍ KOMPONENTA ---
@@ -190,7 +192,7 @@ export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
             icon={L.divIcon({ 
               html: `
                 <div class="scope-container">
-                  <div class="scope-ukr-pulse"></div>
+                  <div class="scope-pulse scope-pulse-ukr"></div>
                   <div class="scope-cross-h" style="background: ${COLORS.UKR_RUS}"></div>
                   <div class="scope-cross-v" style="background: ${COLORS.UKR_RUS}"></div>
                 </div>`, 
@@ -203,7 +205,7 @@ export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
             icon={L.divIcon({ 
               html: `
                 <div class="scope-container">
-                  <div class="scope-isr-pulse"></div>
+                  <div class="scope-pulse scope-pulse-isr"></div>
                   <div class="scope-cross-h" style="background: ${COLORS.ISR_IRN}"></div>
                   <div class="scope-cross-v" style="background: ${COLORS.ISR_IRN}"></div>
                 </div>`, 
@@ -218,7 +220,7 @@ export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
 
       {/* Tlačítko pro vypnutí/zapnutí hranic */}
       {showAttacks && (
-        <div className="absolute top-5 right-5 z-9999">
+        <div className="absolute top-5 right-5 z-[9999]">
           <button
             onClick={() => setShowBorders(!showBorders)}
             className={`px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition-all duration-300 shadow-lg ${
@@ -234,8 +236,8 @@ export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
 
       {/* Tlačítko Conflict Panel */}
       {showAttacks && (
-        <div className="absolute bottom-10 right-10 z-9999 flex items-center justify-center animate-slide-in-up">
-          <div className="absolute inset-0 bg-red-600/30 rounded-xl animate-ping duration-2000"></div>
+        <div className="absolute bottom-10 right-10 z-[9999] flex items-center justify-center animate-slide-in-up">
+          <div className="absolute inset-0 bg-red-600/30 rounded-xl animate-ping duration-[2000ms]"></div>
           
           <button
             onClick={() => onSelectConflict(selectedId)}
@@ -270,48 +272,85 @@ export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        .scope-container { position: relative; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+        @keyframes pulse-slow {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(220,38,38,0.3); }
+          50% { transform: scale(1.02); box-shadow: 0 0 35px rgba(220,38,38,0.6); }
+        }
+
+        .animate-pulse-slow {
+          animation: pulse-slow 3s infinite ease-in-out;
+        }
+
+        .animate-slide-in-up {
+          animation: slideInUp 0.8s ease-out forwards;
+        }
+
+        .scope-container { 
+          position: relative; 
+          width: 30px; 
+          height: 30px; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          cursor: pointer;
+        }
         
-        .scope-ukr-pulse { 
-          position: absolute; width: 20px; height: 20px; border: 2px solid #FF0000; border-radius: 50%; 
+        .scope-pulse { 
+          position: absolute; 
+          width: 20px; 
+          height: 20px; 
+          border-radius: 50%; 
           animation: pulse 0.8s infinite ease-out; 
         }
         
-        .scope-isr-pulse { 
-          position: absolute; width: 20px; height: 20px; border: 2px solid #39FF14; border-radius: 50%; 
+        .scope-pulse-ukr { 
+          border: 2px solid #FF0000; 
+        }
+        
+        .scope-pulse-isr { 
+          border: 2px solid #39FF14; 
           animation: pulse 2.5s infinite ease-in-out; 
           animation-delay: -0.75s;
         }
 
-        .scope-cross-h { position: absolute; width: 15px; height: 1px; }
-        .scope-cross-v { position: absolute; width: 1px; height: 15px; }
+        .scope-cross-h, .scope-cross-v {
+          position: absolute;
+          background: currentColor;
+          opacity: 0.7;
+        }
+        .scope-cross-h { width: 15px; height: 1px; }
+        .scope-cross-v { width: 1px; height: 15px; }
 
-        /* POMALEJŠÍ STŘELY S RŮZNÝM ZPOŽDĚNÍM VÝSTŘELU */
-        @keyframes missile-move {
-          0% { stroke-dashoffset: 400; }
-          100% { stroke-dashoffset: 0; }
+        /* NOVÉ ANIMACE PRO STŘELY - FUNKČNÍ NA VERCEL */
+        @keyframes missileFlow {
+          0% {
+            stroke-dashoffset: 400;
+          }
+          100% {
+            stroke-dashoffset: 0;
+          }
         }
 
-        .animate-missile-flow {
-          stroke-dasharray: 20, 360 !important;
-          animation: missile-move 3s linear infinite !important;
-          -webkit-animation: missile-move 3s linear infinite !important;
-          filter: drop-shadow(0 0 8px currentColor);
+        .missile-line {
+          stroke-dasharray: 30, 370 !important;
+          stroke-dashoffset: 400;
+          animation: missileFlow 2.5s linear infinite !important;
+          filter: drop-shadow(0 0 6px currentColor);
           will-change: stroke-dashoffset;
           transform: translateZ(0);
+          backface-visibility: hidden;
         }
 
-        /* RŮZNÁ ZPOŽDĚNÍ VÝSTŘELŮ - každá střela startuje v jiný čas */
         .delay-m-0 { animation-delay: 0s !important; }
-        .delay-m-1 { animation-delay: 0.4s !important; }
-        .delay-m-2 { animation-delay: 0.8s !important; }
-        .delay-m-3 { animation-delay: 1.2s !important; }
-        .delay-m-4 { animation-delay: 1.6s !important; }
-        .delay-m-5 { animation-delay: 2.0s !important; }
-        .delay-m-6 { animation-delay: 2.4s !important; }
-        .delay-m-7 { animation-delay: 2.8s !important; }
-        .delay-m-8 { animation-delay: 3.2s !important; }
-        .delay-m-9 { animation-delay: 3.6s !important; }
+        .delay-m-1 { animation-delay: 0.6s !important; }
+        .delay-m-2 { animation-delay: 1.2s !important; }
+        .delay-m-3 { animation-delay: 1.8s !important; }
+        .delay-m-4 { animation-delay: 2.4s !important; }
+        .delay-m-5 { animation-delay: 3.0s !important; }
+        .delay-m-6 { animation-delay: 3.6s !important; }
+        .delay-m-7 { animation-delay: 4.2s !important; }
+        .delay-m-8 { animation-delay: 4.8s !important; }
+        .delay-m-9 { animation-delay: 5.4s !important; }
       `}</style>
     </div>
   );
