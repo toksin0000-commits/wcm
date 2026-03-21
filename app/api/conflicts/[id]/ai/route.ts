@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
 import Groq from "groq-sdk";
 
 // Definice typu pro typovou bezpečnost
@@ -18,6 +17,12 @@ const client = new Groq({
   apiKey: process.env.GROQ_API_KEY || "",
 });
 
+// Pomocná funkce pro načtení konfliktů z JSON
+async function getConflictsFromFile() {
+  const conflictsData = await import("@/data/conflicts.json");
+  return conflictsData.default;
+}
+
 export async function POST(
   _req: Request,
   context: { params: Promise<{ id: string }> }
@@ -30,12 +35,13 @@ export async function POST(
       return NextResponse.json({ error: "Missing GROQ_API_KEY" }, { status: 500 });
     }
 
-    // 2. Získání dat z KV (Fallback na prázdný objekt, pokud KV nefunguje nebo neexistuje)
+    // 2. Získání dat z JSON souboru (místo KV)
     let conflict: Conflict | null = null;
     try {
-      conflict = await kv.get<Conflict>(`conflict:${id}`);
+      const conflicts = await getConflictsFromFile();
+      conflict = conflicts.find((c: any) => c.id === id) || null;
     } catch (e) {
-      console.warn("KV Database not connected, using fallback.");
+      console.warn("Failed to load conflicts from file:", e);
     }
 
     // Pokud konflikt v DB není, vytvoříme základní z ID
@@ -48,7 +54,7 @@ export async function POST(
 
     // 3. Volání Groq AI
     const completion = await client.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "mixtral-8x7b-32768",
       messages: [
         {
           role: "system",
@@ -66,7 +72,6 @@ export async function POST(
           }`.trim(),
         },
       ],
-      response_format: { type: "json_object" },
       temperature: 0.3,
       max_tokens: 1000,
     });
@@ -87,12 +92,8 @@ export async function POST(
         .slice(0, 20), // Udržíme historii na 20 bodech
     };
 
-    // 5. Uložení do KV (pokud je dostupné)
-    try {
-      await kv.set(`conflict:${id}`, updatedConflict);
-    } catch (e) {
-      console.error("Failed to save to KV:", e);
-    }
+    // TODO: Zatím neukládáme – později přidáme Redis
+    console.log(`Updated conflict ${id}:`, updatedConflict.summary_short);
 
     return NextResponse.json({ 
       status: "success", 
