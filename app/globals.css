@@ -1,26 +1,363 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
+
+/* -------------------------------------------------------
+   1. TACTICAL VARIABLES & RESET
+------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --neon-cyan: #00f2ff;
+  --neon-dark: #0891b2;
+  --bg-deep: #020617;
+  --panel-glass: rgba(2, 6, 23, 0.2); /* Průhlednost panelu */
+  --scan-color: rgba(0, 242, 255, 0.15);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg-deep);
+  color: var(--neon-cyan);
+  -webkit-font-smoothing: antialiased;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  overflow: hidden;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* -------------------------------------------------------
+   2. MAP (LEAFLET) CUSTOMIZATION
+------------------------------------------------------- */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-deep) !important;
+  transition: opacity 0.8s ease, filter 0.8s ease !important;
+  /* Základní filtr pro temný režim */
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+/* Aktivní stav při otevřeném panelu */
+.leaflet-container.map-active-dim {
+  opacity: 0.4 !important; 
+  filter: invert(100%) hue-rotate(180deg) brightness(50%) contrast(110%) saturate(0) !important;
+}
+
+/* -------------------------------------------------------
+   3. HOLOGRAPHIC INTERFACE (PANEL)
+------------------------------------------------------- */
+.panel {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000;
+  height: 520px !important;
+  
+  /* Skleněný efekt */
+  background: var(--panel-glass) !important;
+  backdrop-filter: blur(2px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
+  
+  border-top: 1px solid rgba(0, 242, 255, 0.3) !important;
+  padding: 30px !important;
+
+  /* Animace nájezdu */
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease-out !important;
+  transform: translateY(100%) !important;
+  opacity: 0 !important;
+  pointer-events: none;
+
+  /* Geometrický řez */
+  clip-path: polygon(0 25px, 25px 0, 100% 0, 100% 100%, 0 100%);
+  animation: panelPulse 3s infinite;
+}
+
+.panel--visible {
+  transform: translateY(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Vnitřní skenovací linka */
+.panel::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 2px;
+  background: var(--scan-color);
+  box-shadow: 0 0 15px var(--neon-cyan);
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* -------------------------------------------------------
+   4. COMPONENTS INSIDE PANEL
+------------------------------------------------------- */
+/* Tabs */
+.tabs {
+  display: flex;
+  background: rgba(0, 242, 255, 0.05);
+  border: 1px solid rgba(0, 242, 255, 0.1);
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  flex: 1;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--neon-dark);
+  padding: 8px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  background: rgba(0, 242, 255, 0.1);
+  color: var(--neon-cyan);
+  border-bottom: 2px solid var(--neon-cyan);
+}
+
+/* Humanitarian Boxes */
+.h-box {
+  background: rgba(0, 242, 255, 0.03);
+  border: 1px solid rgba(0, 242, 255, 0.1);
+  border-left: 4px solid var(--neon-cyan);
+  padding: 15px;
+}
+
+/* Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 3px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--neon-dark); }
+
+/* -------------------------------------------------------
+   5. ANIMATIONS
+------------------------------------------------------- */
+@keyframes panelPulse {
+  0%, 100% { border-top-color: rgba(0, 242, 255, 0.4); }
+  50% { border-top-color: rgba(0, 242, 255, 0.1); }
+}
+
+@keyframes scanline {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Close button */
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  background: none;
+  border: none;
+  color: var(--neon-cyan) !important;
+  font-family: monospace;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 1100;
+  transition: opacity 0.2s;
+}
+
+.close-btn:hover { opacity: 0.7; }
+
+.leaflet-tile {
+  width: 258px !important;
+  height: 258px !important;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+
+@keyframes missile {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Definice animace pohybu */
+@keyframes missile-travel {
+  from {
+    stroke-dashoffset: 200; /* Začátek mimo viditelnou část */
+  }
+  to {
+    stroke-dashoffset: 0; /* Konec u cíle */
+  }
 }
+
+.animate-missile-flow {
+  /* 15 je délka svítící střely, 150 je mezera do další střely */
+  stroke-dasharray: 15, 150; 
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  
+  /* Animace: 2s je rychlost letu */
+  animation: missile-travel 2s linear infinite;
+  
+  /* Neonový glow efekt */
+  filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 2px #fff);
+}
+
+/* -------------------------------------------------------
+   6. TACTICAL MISSILE ANIMATIONS (CLEANED)
+------------------------------------------------------- */
+
+/* Definice plynulého pohybu od startu do cíle */
+@keyframes missile-travel {
+  from {
+    stroke-dashoffset: 1000; /* Dostatečný offset pro dlouhé trasy */
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-missile-flow {
+  /* Klíčové: dasharray definuje mezeru. Bez něj je čára plná. */
+  stroke-dasharray: 30, 300 !important; 
+  
+  /* Spuštění animace */
+  animation: missile-travel 3s linear infinite !important;
+  
+  /* Vzhled projektilu */
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  
+  /* Neonová záře */
+  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 6px currentColor) !important;
+  
+  /* Nutí prohlížeč vykreslovat plynule */
+  vector-effect: non-scaling-stroke;
+  will-change: stroke-dashoffset;
+}
+
+/* Jemná vodicí čára pod střelou */
+.missile-guideline {
+  stroke-dasharray: 2, 10;
+  opacity: 0.2;
+}
+
+
+.impact-arrow svg {
+  animation: arrow-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes arrow-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+
+/* 1. Definice animace zůstává */
+@keyframes pulse { 
+  0% { transform: scale(1); opacity: 1; } 
+  100% { transform: scale(2.2); opacity: 0; } 
+}
+
+/* 2. UKRAJINA - Nastavení rychlosti pro vnitřní kroužek */
+.scope-ukr .scope-pulse { 
+  animation: pulse 0.8s infinite ease-out !important; 
+  animation-delay: 0s !important;
+  border-color: #FF0000 !important;
+}
+
+/* 3. IZRAEL - Nastavení ÚPLNĚ jiné rychlosti pro vnitřní kroužek */
+.scope-isr .scope-pulse { 
+  animation: pulse 3s infinite ease-in-out !important; 
+  animation-delay: -1s !important;
+  border-color: #39FF14 !important;
+}
+
+/* 4. Společný styl pro zaměřovače (aby se to nepletlo) */
+.scope-container {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scope-pulse {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid red;
+  border-radius: 50%;
+}
+
+.scope-cross-h, .scope-cross-v {
+  position: absolute;
+  background: currentColor;
+  opacity: 0.7;
+}
+.scope-cross-h { width: 16px; height: 1px; }
+.scope-cross-v { width: 1px; height: 16px; }
+
+@keyframes pulse-slow {
+          0%, 100% { 
+            transform: scale(1); 
+            shadow: 0 0 20px rgba(220,38,38,0.3);
+          }
+          50% { 
+            transform: scale(1.02); 
+            shadow: 0 0 35px rgba(220,38,38,0.6);
+            border-color: rgba(220,38,38,0.8);
+          }
+        }
+
+        .animate-pulse-slow {
+          animation: pulse-slow 3s infinite ease-in-out;
+        }
+
+        @keyframes slideInUp {
+          from { 
+            opacity: 0; 
+            transform: translateY(50px); /* Začíná 50px pod svou pozicí */
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0); /* Končí na své pozici */
+          }
+        }
+
+        .animate-slide-in-up {
+          /* Animace trvá 0.8s, je plynulá (ease-out) a zůstane v konečné pozici (forwards) */
+          animation: slideInUp 0.8s ease-out forwards;
+        }
+
+        /* Ostatní tvoje animace (pulse-slow, missile-move, atd.) zůstávají */
+        @keyframes pulse-slow {
+          0%, 100% { transform: scale(1); shadow: 0 0 20px rgba(220,38,38,0.3); }
+          50% { transform: scale(1.02); shadow: 0 0 35px rgba(220,38,38,0.6); border-color: rgba(220,38,38,0.8); }
+        }
+        .animate-pulse-slow { animation: pulse-slow 3s infinite ease-in-out; }
+
+        .ship-icon {
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .launch-dot {
+          width: 8px;
+          height: 8px;
+          border: 2px solid;
+          border-radius: 50%;
+        }

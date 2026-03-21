@@ -1,0 +1,161 @@
+[
+  {
+    "id": "ukraine",
+    "name": "Russia–Ukraine",
+    "region": "Europe",
+    "flag": "🇺🇦",
+    "summary_short": "A long-standing conflict between Russia and Ukraine that escalated into a full-scale invasion in 2022.",
+    "summary_long": "The conflict began in 2014 with the annexation of Crimea and fighting in the Donbas. In 2022, Russia launched a large-scale invasion, leading to massive humanitarian impacts, international sanctions, and regional destabilization. Combat continues primarily in eastern and southern Ukraine, while the international community provides humanitarian, economic, and military support.",
+    "countries": ["Russia", "Ukraine"],
+    "arsenal": [
+      {
+        "country": "RUSSIA",
+        "categories": {
+          "Air Forces": ["Tu-160 Blackjack", "Su-34 Fullback", "Geran-2 (UAV)"],
+          "Navy": ["Admiral Grigorovich-class", "Buyan-M class"],
+          "Missile Systems": ["Iskander-M", "KH-101", "Zircon"]
+        }
+      },
+      {
+        "country": "UKRAINE",
+        "categories": {
+          "Air Forces": ["F-16 Fighting Falcon", "MiG-29 Fulcrum", "Bayraktar TB2"],
+          "Navy": ["Magura V5 (USV)", "Sea Baby (USV)"],
+          "Missile Systems": ["MIM-104 Patriot", "HIMARS", "Storm Shadow"]
+        }
+      }
+    ],
+    "timeline": [
+      {
+        "date": "Feb 24, 2022",
+        "title": "Full-Scale Invasion Launched",
+        "description": "Russia initiated a massive military aggression against Ukraine from multiple axes, including a direct strike toward Kyiv."
+      },
+      {
+        "date": "April 2022",
+        "title": "Victory in the Battle of Kyiv",
+        "description": "Russian forces withdrew from northern Ukraine after failing to seize the capital. Discovery of atrocities in Bucha."
+      },
+      {
+        "date": "Sept 2022",
+        "title": "Kharkiv Counter-Offensive",
+        "description": "A lightning Ukrainian operation liberated thousands of square kilometers in the northeast of the country."
+      },
+      {
+        "date": "May 2023",
+        "title": "Fall of Bakhmut",
+        "description": "The end of the longest and bloodiest battle of the war; the city was totally destroyed and occupied by Russian forces after months of fighting."
+      },
+      {
+        "date": "June 2023",
+        "title": "Kakhovka Dam Destruction",
+        "description": "A massive ecological and humanitarian disaster following the dam breach, flooding vast territories in the south."
+      },
+      {
+        "date": "Feb 2024",
+        "title": "Fall of Avdiivka",
+        "description": "Strategic Russian victory in the Donbas after months of intense assaults; Ukrainian forces withdrew to a new defensive line."
+      },
+      {
+        "date": "August 2024",
+        "title": "Incursion into Kursk Region",
+        "description": "A surprise Ukrainian operation on Russian sovereign territory, leading to the occupation of hundreds of square kilometers in the borderlands."
+      },
+      {
+        "date": "2025–2026",
+        "title": "Escalation & Technological Warfare",
+        "description": "Massive deployment of autonomous drones and precision strikes on energy infrastructure on both sides."
+      }
+    ],
+    "humanitarian": {
+      "refugees": 5900000,
+      "idps": 3700000,
+      "civilian_casualties": 56000
+    },
+    "economy": {
+      "impact": "The conflict affects global energy prices, trade flows, and causes extensive damage to critical infrastructure."
+    },
+    "map_area": {
+      "lat": 48.5,
+      "lng": 32.0,
+      "zoom": 5
+    }
+  },
+  {
+    "id": "israel-iran",
+    "name": "Israel–Iran",
+    "region": "Middle East",
+    "flag": "🇮🇱",
+    "summary_short": "Tensions between Israel and Iran manifesting in airstrikes, retaliations, and high-level diplomatic warnings.",
+    "summary_long": "Israel and Iran have long competed for regional influence. Recent months have seen a series of direct airstrikes, cyber incidents, and diplomatic escalations. The conflict impacts regional stability, international trade, and civilian populations, particularly in areas bordering the conflict zones.",
+    "countries": ["Israel", "Iran"],
+    "arsenal": [
+      {
+        "country": "IRAN",
+        "categories": {
+          "Air Forces": ["Su-35S (Delivery pending)", "F-14 Tomcat", "Shahed-136"],
+          "Navy": ["Moudge-class", "Sahand-class"],
+          "Missile Systems": ["Fattah-1", "Shahab-3", "Sejjil"]
+        }
+      },
+      {
+        "country": "ISRAEL",
+        "categories": {
+          "Air Forces": ["F-35I Adir", "F-15I Ra'am", "Eitan (UAV)"],
+          "Navy": ["Sa'ar 6-class", "Dolphin-2 submarines"],
+          "Missile Systems": ["Iron Dome", "Arrow 3", "David's Sling"]
+        }
+      }
+    ],
+    "timeline": [
+      {
+        "date": "April 2024",
+        "title": "Operation Iron Shield: First Direct Encounter",
+        "description": "Iran launched hundreds of drones at Israel. For the first time, the US, UK, and Jordan directly engaged in defense, intercepting 99% of threats alongside the Iron Dome."
+      },
+      {
+        "date": "August 2024",
+        "title": "Tehran Assassination & Mobilization",
+        "description": "The killing of Hamas leader Ismail Haniyeh in the heart of Iran triggered total regional mobilization; the US deployed reinforcements to prevent an immediate all-out war."
+      },
+      {
+        "date": "October 2024",
+        "title": "Days of Repentance & US THAAD Shield",
+        "description": "Israeli airstrikes crippled Iranian missile production. The US deployed the THAAD system with American crews to Israel, marking direct US involvement on the ground."
+      },
+      {
+        "date": "January 2025",
+        "title": "Cyber Warfare & 'Middle East NATO'",
+        "description": "Massive cyberattacks paralyzed Iran's power grid and Israel's financial systems. The US formed a regional coalition with Arab states as a bulwark against Iranian ballistic threats."
+      },
+      {
+        "date": "June 2025",
+        "title": "Battle for the Red Sea & Blockade",
+        "description": "US and British forces struck Houthi positions in Yemen. The US 5th Fleet initiated aggressive naval patrols to intercept Iranian weapon shipments to proxy groups."
+      },
+      {
+        "date": "September 2025",
+        "title": "Strikes on Parchin Nuclear Facilities",
+        "description": "Targeted Israeli operations destroyed key research facilities. The Iranian nuclear program was reportedly set back by years, leading to further naval escalations in the Strait of Hormuz."
+      },
+      {
+        "date": "2026",
+        "title": "Global Standoff",
+        "description": "The US maintains two Carrier Strike Groups in the region. The conflict teeters on the edge of a wider war as fighting shifts into high-intensity proxy conflicts in Lebanon and Syria."
+      }
+    ],
+    "humanitarian": {
+      "refugees": 120000,
+      "idps": 50000,
+      "civilian_casualties": 1100
+    },
+    "economy": {
+      "impact": "Tensions affect oil prices, aviation logistics, and critical regional trade routes."
+    },
+    "map_area": {
+      "lat": 31.0,
+      "lng": 35.0,
+      "zoom": 6
+    }
+  }
+]
