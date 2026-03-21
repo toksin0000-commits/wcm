@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { MapContainer, TileLayer, Marker, useMap, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap, Polyline, GeoJSON } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -33,11 +33,10 @@ function MapController({ selectedId, onAnimationComplete }: { selectedId: string
   return null;
 }
 
-// --- 2. KOMPONENTA PRO ÚTOKY ---
+// --- 2. KOMPONENTA PRO ÚTOKY (POMALEJŠÍ STŘELY, RŮZNÁ ZPOŽDĚNÍ) ---
 function AttackLines({ selectedId, colors }: { selectedId: string | null, colors: any }) {
   if (!selectedId) return null;
 
-  // --- TADY ZMĚŇ ČÍSLO PRO VELIKOST VŠECH LODÍ ---
   const SHIP_SIZE = 15; 
 
   const attacks: Record<string, { from: [number, number], to: [number, number], size?: number, rotation?: number, duration: string, color?: string }[]> = {
@@ -57,7 +56,6 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
       { from: [30.00, 50.00], to: [29.55, 34.95], size: 10, rotation: 185, duration: "3s" },
       { from: [32.08, 34.78], to: [35.55, 50.80], size: 12, rotation: 345, duration: "3s", color: "#0038B8" }, 
       { from: [31.04, 34.85], to: [32.60, 51.00], size: 10, rotation: 355, duration: "2.8s", color: "#0038B8" }, 
-      // USA LODĚ (Poznávací barva #FF00FF)
       { from: [26.50, 54.00], to: [29.00, 56.00], size: 10, rotation: 310, duration: "2s", color: "#FF00FF" }, 
       { from: [25.00, 57.50], to: [27.20, 60.70], size: 10, rotation: 320, duration: "2.2s", color: "#FF00FF" },
       { from: [34.50, 33.50], to: [33.70, 35.50], size: 10, rotation: 25, duration: "1.8s", color: "#FF00FF" },
@@ -67,7 +65,6 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
   const currentAttacks = attacks[selectedId] || [];
   const defaultColor = selectedId === "ukraine" ? colors.UKR_RUS : colors.ISR_IRN;
 
-  // --- SVG DEFINICE LODI ---
   const shipSvg = (color: string, size: number) => `
     <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 5px ${color});">
       <path d="M2 10h20l-3 9H5l-3-9z" />
@@ -82,13 +79,10 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
         const activeColor = attack.color || defaultColor;
         const s = attack.size || 20;
         const r = attack.rotation || 0;
-
-        // Identifikace lodí podle barvy USA
         const isFromShip = attack.color === "#FF00FF" || attack.color === "#FFFFFF";
 
         return (
           <React.Fragment key={`${selectedId}-${index}`}>
-            {/* Startovní bod */}
             <Marker 
               position={attack.from} 
               interactive={false} 
@@ -97,16 +91,13 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
                 html: isFromShip 
                   ? `<div style="display: flex; align-items: center; justify-content: center;">${shipSvg(activeColor, SHIP_SIZE)}</div>`
                   : `<div style="width: 8px; height: 8px; border: 2px solid ${activeColor}; border-radius: 50%; background: ${activeColor}44;"></div>`, 
-                // Pokud je to loď, použije SHIP_SIZE, pokud tečka, použije 8
                 iconSize: isFromShip ? [SHIP_SIZE, SHIP_SIZE] : [8, 8], 
                 iconAnchor: isFromShip ? [SHIP_SIZE / 2, SHIP_SIZE / 2] : [4, 4] 
               })} 
             />
             
-            {/* Naváděcí čára */}
             <Polyline positions={[attack.from, attack.to]} pathOptions={{ color: activeColor, weight: 1, opacity: 0.2, dashArray: "4, 8" }} />
             
-            {/* Střela */}
             <Polyline
               positions={[attack.from, attack.to]}
               pathOptions={{
@@ -114,14 +105,10 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
                 weight: 3,
                 opacity: 1,
                 className: `animate-missile-flow delay-m-${index}`,
-                dashArray: "15, 1000",
-                lineCap: "round",
-                // @ts-ignore
-                style: { animationDuration: attack.duration }
+                lineCap: "round"
               }}
             />
             
-            {/* Cílová šipka */}
             <Marker position={attack.to} interactive={false} icon={L.divIcon({ className: "impact-arrow", html: `<div style="transform: rotate(${r}deg); color: ${activeColor}; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" fill="currentColor" width="${s}" height="${s}" style="filter: drop-shadow(0 0 5px ${activeColor});"><path d="M21 12l-18 9v-18z" /></svg></div>`, iconSize: [s, s], iconAnchor: [s / 2, s / 2] })} />
           </React.Fragment>
         );
@@ -130,12 +117,63 @@ function AttackLines({ selectedId, colors }: { selectedId: string | null, colors
   );
 }
 
+// --- 3. KOMPONENTA PRO ZVÝRAZNĚNÍ STÁTŮ KONFLIKTU ---
+function ConflictCountries({ selectedId, show }: { selectedId: string | null; show: boolean }) {
+  const [borderData, setBorderData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/data/countries.json')
+      .then(response => response.json())
+      .then(data => {
+        console.log('Data načtena, první stát:', data.features[0]?.properties);
+        setBorderData(data);
+      })
+      .catch(error => console.error('Chyba při načítání:', error));
+  }, []);
+
+  const getCountryStyle = (feature: any) => {
+    const name = feature.properties.NAME || feature.properties.ADMIN || feature.properties.NAME_LONG;
+    
+    if (!selectedId) return { weight: 0, fillOpacity: 0, opacity: 0 };
+    
+    if (selectedId === 'ukraine') {
+      if (name === 'Ukraine') return { color: '#0057B7', weight: 1, fillColor: '#0057B7', fillOpacity: 0.15 };
+      if (name === 'Russia') return { color: '#FF5555', weight: 1, fillColor: '#FF5555', fillOpacity: 0.15 };
+    }
+    
+    if (selectedId === 'israel-iran') {
+      if (name === 'Israel') return { color: '#0057B7', weight: 1, fillColor: '#0057B7', fillOpacity: 0.15 };
+      if (name === 'Iran') return { color: '#39FF14', weight: 1, fillColor: '#39FF14', fillOpacity: 0.15 };
+    }
+    
+    return { weight: 0, fillOpacity: 0, opacity: 0 };
+  };
+
+  if (!borderData || !show || !selectedId) return null;
+
+  return <GeoJSON 
+    data={borderData} 
+    style={getCountryStyle}
+  />;
+}
+
+// --- HLAVNÍ KOMPONENTA ---
 export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
   const [showAttacks, setShowAttacks] = useState(false);
+  const [showBorders, setShowBorders] = useState(false);
   const COLORS = { UKR_RUS: "#FF0000", ISR_IRN: "#39FF14" };
 
-  const handleArrival = useCallback(() => setShowAttacks(true), []);
-  useEffect(() => { if (!selectedId) setShowAttacks(false); }, [selectedId]);
+  const handleArrival = useCallback(() => {
+    setShowAttacks(true);
+    setShowBorders(true);
+  }, []);
+
+  useEffect(() => { 
+    if (!selectedId) {
+      setShowAttacks(false);
+      setShowBorders(false);
+    }
+  }, [selectedId]);
 
   return (
     <div className="w-full h-full bg-[#020617] relative overflow-hidden">
@@ -143,6 +181,9 @@ export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
         <MapContainer center={[20, 0]} zoom={2} className="w-full h-full" zoomControl={false} style={{ background: "#020617" }}>
           <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png" />
           <MapController selectedId={selectedId} onAnimationComplete={handleArrival} />
+          
+          {/* Zvýraznění států konfliktu */}
+          <ConflictCountries selectedId={selectedId} show={showBorders} />
           
           <Marker 
             position={[48.3794, 31.1656]} 
@@ -175,12 +216,26 @@ export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
         </MapContainer>
       </div>
 
-      {/* --- TLAČÍTKO CONFLICT PANEL (VÍCE ŽIVÉ + PŘÍLET ZESpodu) --- */}
-      {/* Tlačítko se zobrazí až když showAttacks je true (po příletu kamery) */}
+      {/* Tlačítko pro vypnutí/zapnutí hranic */}
       {showAttacks && (
-        <div className="absolute bottom-10 right-10 z-[9999] flex items-center justify-center animate-slide-in-up">
-          {/* Pulzující aura za tlačítkem */}
-          <div className="absolute inset-0 bg-red-600/30 rounded-xl animate-ping duration-[2000ms]"></div>
+        <div className="absolute top-5 right-5 z-9999">
+          <button
+            onClick={() => setShowBorders(!showBorders)}
+            className={`px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition-all duration-300 shadow-lg ${
+              showBorders 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
+            }`}
+          >
+            {showBorders ? 'HIDE BORDERS' : 'SHOW BORDERS'}
+          </button>
+        </div>
+      )}
+
+      {/* Tlačítko Conflict Panel */}
+      {showAttacks && (
+        <div className="absolute bottom-10 right-10 z-9999 flex items-center justify-center animate-slide-in-up">
+          <div className="absolute inset-0 bg-red-600/30 rounded-xl animate-ping duration-2000"></div>
           
           <button
             onClick={() => onSelectConflict(selectedId)}
@@ -215,10 +270,6 @@ export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        .animate-in {
-          animation: slideInUp 0.4s ease-out forwards;
-        }
-
         .scope-container { position: relative; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
         
         .scope-ukr-pulse { 
@@ -235,27 +286,32 @@ export default function Map({ onSelectConflict, isDimmed, selectedId }: any) {
         .scope-cross-h { position: absolute; width: 15px; height: 1px; }
         .scope-cross-v { position: absolute; width: 1px; height: 15px; }
 
+        /* POMALEJŠÍ STŘELY S RŮZNÝM ZPOŽDĚNÍM VÝSTŘELU */
         @keyframes missile-move {
-          0% { stroke-dashoffset: 1000; }
+          0% { stroke-dashoffset: 400; }
           100% { stroke-dashoffset: 0; }
         }
 
         .animate-missile-flow {
-          animation: missile-move 3s linear infinite;
+          stroke-dasharray: 20, 360 !important;
+          animation: missile-move 3s linear infinite !important;
+          -webkit-animation: missile-move 3s linear infinite !important;
           filter: drop-shadow(0 0 8px currentColor);
+          will-change: stroke-dashoffset;
+          transform: translateZ(0);
         }
 
+        /* RŮZNÁ ZPOŽDĚNÍ VÝSTŘELŮ - každá střela startuje v jiný čas */
         .delay-m-0 { animation-delay: 0s !important; }
-        .delay-m-1 { animation-delay: 0.8s !important; }
-        .delay-m-2 { animation-delay: 1.6s !important; }
-        .delay-m-3 { animation-delay: 2.4s !important; }
-        /* Přidaná zpoždění pro více střel */
-        .delay-m-4 { animation-delay: 3.2s !important; }
-        .delay-m-5 { animation-delay: 4.0s !important; }
-        .delay-m-6 { animation-delay: 4.8s !important; }
-        .delay-m-7 { animation-delay: 5.6s !important; }
-        .delay-m-8 { animation-delay: 6.4s !important; }
-        .delay-m-9 { animation-delay: 7.2s !important; }
+        .delay-m-1 { animation-delay: 0.4s !important; }
+        .delay-m-2 { animation-delay: 0.8s !important; }
+        .delay-m-3 { animation-delay: 1.2s !important; }
+        .delay-m-4 { animation-delay: 1.6s !important; }
+        .delay-m-5 { animation-delay: 2.0s !important; }
+        .delay-m-6 { animation-delay: 2.4s !important; }
+        .delay-m-7 { animation-delay: 2.8s !important; }
+        .delay-m-8 { animation-delay: 3.2s !important; }
+        .delay-m-9 { animation-delay: 3.6s !important; }
       `}</style>
     </div>
   );
